@@ -36,6 +36,43 @@ ufw status
 
 From the backend project directory:
 
+1. Prepare deployment env vars:
+
+```bash
+nano .env
+```
+
+Set required values in `.env` (single source of truth):
+
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `DATABASE_URL`
+- `SECRET_KEY`
+- `JWT_SECRET_KEY`
+- `CORS_ORIGINS` (use your frontend origin, or `*` temporarily)
+
+Use a Docker-safe database URL on VPS, for example:
+
+```env
+DATABASE_URL=postgresql://arnold:Falcon%407ham@db:5432/portfolio
+```
+
+Important:
+- `localhost:5433` works from your host machine.
+- Inside Docker containers, `localhost` points to the container itself.
+- For Docker deployment, use `db:5432` in `DATABASE_URL`.
+
+1. Ensure the deployment files exist and are up to date:
+
+- `docker-compose.yml`
+- `Dockerfile`
+- `entrypoint.sh`
+- `nginx.conf`
+- `.env` (local VPS file, do not commit)
+
+1. Start services:
+
 ```bash
 docker compose up -d --build
 ```
@@ -71,50 +108,6 @@ certbot certonly --standalone ...
 
 That only works after you have a domain such as `api.yourdomain.com` pointing to the VPS.
 
-## Later: Enable SSL With Nginx/Certbot
-
-Once you have a domain:
-
-1. Create an `A` record pointing your domain or subdomain to the VPS IP.
-2. Open both ports:
-
-```bash
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw reload
-```
-
-3. Install `certbot`:
-
-```bash
-apt update
-apt install -y certbot
-```
-
-4. Stop Docker temporarily if port `80` is in use:
-
-```bash
-docker compose down
-```
-
-5. Issue certificate:
-
-```bash
-certbot certonly --standalone -d api.yourdomain.com
-```
-
-6. Certificates will be here:
-
-```text
-/etc/letsencrypt/live/api.yourdomain.com/
-```
-
-7. Then update Nginx to use those certificate files and restart Docker:
-
-```bash
-docker compose up -d --build
-```
-
 ## Updating Backend After Changes
 
 ```bash
@@ -131,16 +124,3 @@ docker compose logs -f app
 docker image prune -f
 ```
 
-## Auto Renew Later
-
-Only after you have a domain and SSL configured:
-
-```bash
-crontab -e
-```
-
-Add:
-
-```bash
-0 0 * * * certbot renew --quiet && docker compose -f /path/to/your/docker-compose.yml restart nginx
-```

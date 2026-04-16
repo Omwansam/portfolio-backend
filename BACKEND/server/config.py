@@ -1,19 +1,57 @@
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
-
-load_dotenv()
+from urllib.parse import urlsplit, urlunsplit
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, '..'))
+ENV_PATH = os.path.join(PROJECT_ROOT, '.env')
+load_dotenv(ENV_PATH, override=True)
 INSTANCE_DIR = os.path.join(BASE_DIR, 'instance')
 os.makedirs(INSTANCE_DIR, exist_ok=True)
+
+
+def _running_in_docker():
+    return os.path.exists('/.dockerenv')
+
+
+def _swap_db_host_to_localhost(db_url: str) -> str:
+    """When running outside Docker, replace docker hostname `db` with localhost."""
+    try:
+        parsed = urlsplit(db_url)
+        if parsed.hostname != 'db':
+            return db_url
+
+        username = parsed.username or ''
+        password = parsed.password or ''
+        auth = username
+        if password:
+            auth = f"{auth}:{password}"
+        if auth:
+            auth = f"{auth}@"
+
+        host = 'localhost'
+        port = parsed.port or 5432
+        netloc = f"{auth}{host}:{port}"
+        return urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
+    except Exception:
+        return db_url
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY')
     # If DATABASE_URL is not provided, default to the seeded SQLite file in instance dir
     _default_sqlite_path = os.path.join(INSTANCE_DIR, 'portfolio.db')
     _default_sqlite_uri = f"sqlite:///{_default_sqlite_path}"
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', _default_sqlite_uri)
+    _database_url = os.getenv('DATABASE_URL', _default_sqlite_uri)
+    _local_database_url = os.getenv('LOCAL_DATABASE_URL')
+
+    if not _running_in_docker():
+        if _local_database_url:
+            _database_url = _local_database_url
+        else:
+            _database_url = _swap_db_host_to_localhost(_database_url)
+
+    SQLALCHEMY_DATABASE_URI = _database_url
 
     # For SQLite under Gunicorn, ensure thread safety and connectivity
     if SQLALCHEMY_DATABASE_URI.startswith('sqlite:///') and 'check_same_thread' not in SQLALCHEMY_DATABASE_URI:

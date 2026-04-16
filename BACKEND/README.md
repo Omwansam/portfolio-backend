@@ -69,10 +69,10 @@ BACKEND/
    ```
 
 4. **Set up environment variables**
-   Create a `.env` file in the `server/` directory:
+   Create a `.env` file in the project root (`BACKEND/.env`):
    ```env
    SECRET_KEY=your-secret-key-here
-   DATABASE_URL=postgresql://username:password@localhost:5432/portfolio_db
+   DATABASE_URL=postgresql://username:password@localhost:5433/portfolio
    JWT_SECRET_KEY=your-jwt-secret-key-here
    ```
 
