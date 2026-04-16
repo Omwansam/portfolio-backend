@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+venv
+.venv
+ENV
+env
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.pytest_cache
+.mypy_cache
+.tox
+.coverage
+htmlcov
+
+# Environment
+.env
+.env.local
+.env.*.local
+server/.env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project
+server/instance
+server/static/uploads
+*.log
+.ipynb_checkpoints
