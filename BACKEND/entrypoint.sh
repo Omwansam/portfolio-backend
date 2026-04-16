@@ -14,7 +14,7 @@ fi
 
 if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   echo "Running database migrations..."
-  flask --app server.app db upgrade
+  flask --app server.app db --directory server/migrations upgrade
 fi
 
 exec "$@"
